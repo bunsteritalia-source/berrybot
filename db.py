@@ -1,5 +1,6 @@
 import aiosqlite
 import os
+from werkzeug.security import generate_password_hash
 
 DB_PATH = os.getenv("DB_PATH", "berry.db")
 
@@ -83,6 +84,9 @@ async def init_db():
                 ('facebook_url', 'https://www.facebook.com/berry.bouquet.md/'),
                 ('instagram_url', 'https://www.instagram.com/berry_bouquet.md/'),
                 ('tiktok_url', 'https://www.tiktok.com/@berry_bouquet_md.md');
-            INSERT OR IGNORE INTO admins (username, password_hash) VALUES ('admin', 'pbkdf2:sha256:260000$0f1c3c8e5a6e4b9d8c7e6a5b4c3d2e1f$9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0');
         """)
+        # Удаляем старого админа (если был) и создаём нового с правильным паролем
+        await db.execute("DELETE FROM admins WHERE username = 'admin'")
+        hashed = generate_password_hash('admin123')
+        await db.execute("INSERT OR IGNORE INTO admins (username, password_hash) VALUES (?, ?)", ('admin', hashed))
         await db.commit()

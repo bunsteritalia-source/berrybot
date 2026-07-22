@@ -3,7 +3,8 @@ import os
 import aiosqlite
 
 def send_broadcast(text_ru, text_en, text_ro, photo_url=None):
-    from bot.main import dp, bot   # импорт внутри функции — не вызывает цикл при старте
+    from bot import bot          # берём bot из bot/__init__.py, без импорта main
+    from bot.main import dp      # dp тоже нужен для event loop
 
     async def _broadcast():
         async with aiosqlite.connect(os.getenv("DB_PATH", "berry.db")) as db:

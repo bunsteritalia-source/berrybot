@@ -1,25 +1,73 @@
-<!DOCTYPE html>
-<html>
-<head><title>Настройки</title></head>
-<body>
-  <h2>Настройки</h2>
-  <form method="post" enctype="multipart/form-data">
-    <h3>Текст информации (RU)</h3>
-    <textarea name="info_text_ru">{{ config['info_text_ru'] }}</textarea>
-    <h3>Info text (EN)</h3>
-    <textarea name="info_text_en">{{ config['info_text_en'] }}</textarea>
-    <h3>Text informativ (RO)</h3>
-    <textarea name="info_text_ro">{{ config['info_text_ro'] }}</textarea>
-    <h3>Ссылки</h3>
-    <input name="site_url" value="{{ config['site_url'] }}"><br>
-    <input name="facebook_url" value="{{ config['facebook_url'] }}"><br>
-    <input name="instagram_url" value="{{ config['instagram_url'] }}"><br>
-    <input name="tiktok_url" value="{{ config['tiktok_url'] }}"><br>
-    <h3>Изображение для информации</h3>
-    {% if config['info_image'] %}<img src="{{ config['info_image'] }}" width="100"><br>{% endif %}
-    <input type="file" name="info_image"><br>
-    <button type="submit">Сохранить</button>
-  </form>
-  <a href="/">Назад</a>
-</body>
-</html>
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-4">Настройки</h2>
+<form method="post" enctype="multipart/form-data">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header"><h5>Текст раздела "Информация"</h5></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Русский</label>
+            <textarea name="info_text_ru" class="form-control" rows="3">{{ config['info_text_ru'] }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">English</label>
+            <textarea name="info_text_en" class="form-control" rows="3">{{ config['info_text_en'] }}</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Română</label>
+            <textarea name="info_text_ro" class="form-control" rows="3">{{ config['info_text_ro'] }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header"><h5>Ссылки на соцсети и сайт</h5></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Сайт</label>
+            <input name="site_url" class="form-control" value="{{ config['site_url'] }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Facebook</label>
+            <input name="facebook_url" class="form-control" value="{{ config['facebook_url'] }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Instagram</label>
+            <input name="instagram_url" class="form-control" value="{{ config['instagram_url'] }}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">TikTok</label>
+            <input name="tiktok_url" class="form-control" value="{{ config['tiktok_url'] }}">
+          </div>
+        </div>
+      </div>
+      <div class="card mb-4">
+        <div class="card-header"><h5>Изображение для раздела информации</h5></div>
+        <div class="card-body">
+          {% if config['info_image'] %}
+            <img src="{{ config['info_image'] }}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+          {% endif %}
+          <div class="drop-zone" id="infoImageDropZone">
+            <i class="bi bi-image"></i>
+            <p>Перетащите изображение или нажмите для выбора</p>
+            <input type="file" name="info_image" accept="image/*" data-preview-id="infoImagePreview" style="display:none;" onclick="this.parent.querySelector('p').click()">
+          </div>
+          <div id="infoImagePreview" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-save"></i> Сохранить все настройки</button>
+</form>
+
+<script>
+  document.getElementById('infoImageDropZone').addEventListener('click', function(e) {
+    if (e.target.tagName !== 'INPUT') {
+      this.querySelector('input[type="file"]').click();
+    }
+  });
+</script>
+{% endblock %}

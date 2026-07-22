@@ -1,30 +1,47 @@
 {% extends "layout.html" %}
 {% block content %}
 <h2>Варианты товара "{{ product.name_ru }}"</h2>
-<form method="post" action="/products/{{ product.id }}/variants/add" class="row g-2 mb-4">
+<form method="post" action="/products/{{ product.id }}/variants/add" class="row g-3 mb-4">
   <div class="col-md-2">
-    <input name="name_ru" class="form-control" placeholder="Название RU" required>
+    <label class="form-label">Количество (шт)</label>
+    <input name="quantity" type="number" class="form-control" placeholder="25" required>
   </div>
   <div class="col-md-2">
-    <input name="name_en" class="form-control" placeholder="Name EN">
+    <label class="form-label">Цена (MDL)</label>
+    <input name="price" type="number" class="form-control" placeholder="500" required>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Название RU (необяз.)</label>
+    <input name="name_ru" class="form-control" placeholder="25 шт">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Название EN (необяз.)</label>
+    <input name="name_en" class="form-control" placeholder="25 pcs">
   </div>
   <div class="col-md-2">
-    <input name="name_ro" class="form-control" placeholder="Nume RO">
+    <label class="form-label">Название RO (необяз.)</label>
+    <input name="name_ro" class="form-control" placeholder="25 buc">
   </div>
-  <div class="col-md-2">
-    <input name="price" type="number" class="form-control" placeholder="Цена" required>
-  </div>
-  <div class="col-md-2">
-    <button type="submit" class="btn btn-success"><i class="bi bi-plus-circle"></i> Добавить</button>
+  <div class="col-md-12">
+    <button type="submit" class="btn btn-success"><i class="bi bi-plus-circle"></i> Добавить вариант</button>
   </div>
 </form>
+
 <table class="table table-striped">
-  <thead><tr><th>Название</th><th>Цена</th><th>Действия</th></tr></thead>
+  <thead>
+    <tr>
+      <th>Количество</th>
+      <th>Цена</th>
+      <th>Название (RU)</th>
+      <th>Действия</th>
+    </tr>
+  </thead>
   <tbody>
     {% for v in variants %}
     <tr>
-      <td>{{ v.name_ru }}</td>
+      <td>{{ v.quantity }} шт</td>
       <td>{{ v.price }} MDL</td>
+      <td>{{ v.name_ru }}</td>
       <td><a href="/variants/delete/{{ v.id }}" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a></td>
     </tr>
     {% endfor %}

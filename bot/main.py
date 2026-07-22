@@ -9,7 +9,7 @@ from bot.handlers import start, catalog, cart, order, admin
 from bot.middlewares.language import LanguageMiddleware
 from db import init_db
 
-# Импортируем админское приложение (теперь без цикла)
+# Импортируем админское приложение
 from admin_site.app import app as admin_app
 
 def ping_self():

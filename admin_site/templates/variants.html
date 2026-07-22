@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><title>Варианты товара "{{ product.name_ru }}"</title></head>
+<body>
+  <h2>Варианты: {{ product.name_ru }}</h2>
+  <form method="post" action="/products/{{ product.id }}/variants/add">
+    <input name="name_ru" placeholder="Название RU" required>
+    <input name="name_en" placeholder="Name EN">
+    <input name="name_ro" placeholder="Nume RO">
+    <input name="price" type="number" placeholder="Цена" required>
+    <button type="submit">Добавить</button>
+  </form>
+  <table border="1">
+    <tr><th>ID</th><th>Название</th><th>Цена</th><th></th></tr>
+    {% for v in variants %}
+    <tr>
+      <td>{{ v.id }}</td>
+      <td>{{ v.name_ru }}</td>
+      <td>{{ v.price }}</td>
+      <td><a href="/variants/delete/{{ v.id }}">Удалить</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <a href="/products">Назад к товарам</a>
+</body>
+</html>

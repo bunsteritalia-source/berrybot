@@ -8,48 +8,19 @@ from bot import bot, dp
 from bot.handlers import start, catalog, cart, order, admin
 from bot.middlewares.language import LanguageMiddleware
 from db import init_db
-import aiosqlite
 
-# Импортируем админское приложение
+# Импортируем админское приложение (теперь без цикла)
 from admin_site.app import app as admin_app
 
 def ping_self():
     while True:
-        time.sleep(600)  # каждые 10 минут
+        time.sleep(600)
         try:
             url = os.getenv("RENDER_EXTERNAL_URL")
             if url:
                 urllib.request.urlopen(url)
         except:
             pass
-
-def send_broadcast(text_ru, text_en, text_ro, photo_url=None):
-    async def _broadcast():
-        async with aiosqlite.connect(os.getenv("DB_PATH", "berry.db")) as db:
-            cursor = await db.execute("SELECT user_id, language FROM users")
-            users = await cursor.fetchall()
-        for user_id, lang in users:
-            try:
-                if lang == 'ru':
-                    txt = text_ru
-                elif lang == 'ro':
-                    txt = text_ro
-                else:
-                    txt = text_en
-                if photo_url:
-                    base_url = os.getenv("RENDER_EXTERNAL_URL", "").rstrip('/')
-                    full_url = base_url + photo_url
-                    await bot.send_photo(user_id, photo=full_url, caption=txt)
-                else:
-                    await bot.send_message(user_id, txt)
-                await asyncio.sleep(0.05)
-            except Exception as e:
-                print(f"Broadcast error for {user_id}: {e}")
-    loop = dp.loop if hasattr(dp, 'loop') else asyncio.get_event_loop()
-    if loop.is_running():
-        asyncio.create_task(_broadcast())
-    else:
-        loop.run_until_complete(_broadcast())
 
 async def main():
     await init_db()
@@ -65,7 +36,6 @@ async def main():
 
 def run_flask():
     port = int(os.getenv('PORT', 10000))
-    # Запускаем админское приложение, а не отдельный Flask
     admin_app.run(host='0.0.0.0', port=port)
 
 if __name__ == "__main__":

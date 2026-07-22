@@ -7,7 +7,7 @@ from bot.keyboards import main_menu
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import aiosqlite
 import os
-from bot.main import bot  # для отправки уведомлений
+from bot import bot  # ИСПРАВЛЕНО: больше не импортируем из bot.main
 
 router = Router()
 

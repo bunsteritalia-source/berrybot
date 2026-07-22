@@ -1,16 +1,50 @@
-<!DOCTYPE html>
-<html>
-<head><title>Рассылка</title></head>
-<body>
-  <h2>Рассылка всем пользователям</h2>
-  {% if success %}<p style="color:green">Рассылка запущена!</p>{% endif %}
-  <form method="post" enctype="multipart/form-data">
-    <textarea name="text_ru" placeholder="Текст на русском"></textarea><br>
-    <textarea name="text_en" placeholder="Text in English"></textarea><br>
-    <textarea name="text_ro" placeholder="Text în română"></textarea><br>
-    <input type="file" name="photo"><br>
-    <button type="submit">Отправить</button>
-  </form>
-  <a href="/">Назад</a>
-</body>
-</html>
+{% extends "layout.html" %}
+{% block content %}
+<h2 class="mb-4">Рассылка всем пользователям</h2>
+{% if success %}<div class="alert alert-success">Рассылка успешно запущена!</div>{% endif %}
+<form method="post" enctype="multipart/form-data">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header"><h5>Текст сообщения</h5></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Русский</label>
+            <textarea name="text_ru" class="form-control" rows="2" placeholder="Текст на русском..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">English</label>
+            <textarea name="text_en" class="form-control" rows="2" placeholder="Text in English..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Română</label>
+            <textarea name="text_ro" class="form-control" rows="2" placeholder="Text în română..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header"><h5>Прикрепить фото (опционально)</h5></div>
+        <div class="card-body">
+          <div class="drop-zone" id="broadcastPhotoDropZone">
+            <i class="bi bi-camera"></i>
+            <p>Перетащите фото или нажмите для выбора</p>
+            <input type="file" name="photo" accept="image/*" data-preview-id="broadcastPhotoPreview" style="display:none;" onclick="this.parent.querySelector('p').click()">
+          </div>
+          <div id="broadcastPhotoPreview" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-danger btn-lg"><i class="bi bi-send"></i> Отправить рассылку</button>
+</form>
+
+<script>
+  document.getElementById('broadcastPhotoDropZone').addEventListener('click', function(e) {
+    if (e.target.tagName !== 'INPUT') {
+      this.querySelector('input[type="file"]').click();
+    }
+  });
+</script>
+{% endblock %}

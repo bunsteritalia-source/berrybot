@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><title>Товары</title></head>
+<body>
+  <h2>Товары</h2>
+  <a href="/products/add">Добавить товар</a>
+  <table border="1">
+    <tr><th>ID</th><th>Название</th><th>Категория</th><th>Действия</th></tr>
+    {% for p in products %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.name_ru }}</td>
+      <td>{{ p.category_id }}</td>
+      <td>
+        <a href="/products/edit/{{ p.id }}">Ред.</a>
+        <a href="/products/{{ p.id }}/variants">Варианты</a>
+        <a href="/products/delete/{{ p.id }}">Уд.</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <a href="/">Назад</a>
+</body>
+</html>

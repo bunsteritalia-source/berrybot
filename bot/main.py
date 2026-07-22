@@ -2,7 +2,7 @@ import asyncio
 import threading
 import time
 import os
-import requests
+import urllib.request
 from flask import Flask
 from bot import bot, dp
 from bot.handlers import start, catalog, cart, order, admin
@@ -18,11 +18,11 @@ def home():
 
 def ping_self():
     while True:
-        time.sleep(600)
+        time.sleep(600)  # каждые 10 минут
         try:
             url = os.getenv("RENDER_EXTERNAL_URL")
             if url:
-                requests.get(url)
+                urllib.request.urlopen(url)
         except:
             pass
 
@@ -48,7 +48,6 @@ def send_broadcast(text_ru, text_en, text_ro, photo_url=None):
                 await asyncio.sleep(0.05)
             except Exception as e:
                 print(f"Broadcast error for {user_id}: {e}")
-    # Запускаем корутину в основном event loop
     loop = dp.loop if hasattr(dp, 'loop') else asyncio.get_event_loop()
     if loop.is_running():
         asyncio.create_task(_broadcast())

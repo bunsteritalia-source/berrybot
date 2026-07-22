@@ -1,26 +1,62 @@
-<!DOCTYPE html>
-<html>
-<head><title>Категории</title></head>
-<body>
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
   <h2>Категории</h2>
-  <form method="post" action="/categories/add">
-    <input name="name_ru" placeholder="Название RU" required>
-    <input name="name_en" placeholder="Name EN">
-    <input name="name_ro" placeholder="Nume RO">
-    <button type="submit">Добавить</button>
-  </form>
-  <table border="1">
-    <tr><th>ID</th><th>RU</th><th>EN</th><th>RO</th><th></th></tr>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+    <i class="bi bi-plus-lg"></i> Добавить категорию
+  </button>
+</div>
+
+<table class="table table-striped table-hover align-middle">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Русский</th>
+      <th>English</th>
+      <th>Română</th>
+      <th style="width: 100px;">Действия</th>
+    </tr>
+  </thead>
+  <tbody>
     {% for cat in categories %}
     <tr>
       <td>{{ cat.id }}</td>
       <td>{{ cat.name_ru }}</td>
       <td>{{ cat.name_en }}</td>
       <td>{{ cat.name_ro }}</td>
-      <td><a href="/categories/delete/{{ cat.id }}">Удалить</a></td>
+      <td>
+        <a href="/categories/delete/{{ cat.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить категорию? Это также удалит связанные товары.')">
+          <i class="bi bi-trash"></i>
+        </a>
+      </td>
     </tr>
     {% endfor %}
-  </table>
-  <a href="/">Назад</a>
-</body>
-</html>
+  </tbody>
+</table>
+
+<!-- Модальное окно добавления -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="/categories/add">
+      <div class="modal-header">
+        <h5 class="modal-title">Новая категория</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <input name="name_ru" class="form-control" placeholder="Название (русский)" required>
+        </div>
+        <div class="mb-3">
+          <input name="name_en" class="form-control" placeholder="Name (English)">
+        </div>
+        <div class="mb-3">
+          <input name="name_ro" class="form-control" placeholder="Nume (română)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Добавить</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

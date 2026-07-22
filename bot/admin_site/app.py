@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, send_from_directory
 from werkzeug.utils import secure_filename
-from auth import login_required, authenticate
+from admin_site.auth import login_required, authenticate
 from models import query_db, get_setting, set_setting, get_all_users
 from werkzeug.security import generate_password_hash
 import json

@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.utils import secure_filename
-from auth import login_required, authenticate
+from admin_site.auth import login_required, authenticate
 from models import query_db, get_setting, set_setting
 from werkzeug.security import generate_password_hash
 import json
@@ -204,10 +204,21 @@ def settings():
         config[key] = get_setting(key)
     return render_template('settings.html', config=config)
 
-# Рассылка (заглушка, пока не подключим broadcast.py)
+# Рассылка
 @app.route('/broadcast', methods=['GET', 'POST'])
 @login_required
 def broadcast():
     if request.method == 'POST':
+        text_ru = request.form['text_ru']
+        text_en = request.form['text_en']
+        text_ro = request.form['text_ro']
+        photo = request.files.get('photo')
+        photo_url = None
+        if photo and photo.filename:
+            filename = secure_filename(photo.filename)
+            photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            photo_url = '/static/uploads/' + filename
+        from broadcast import send_broadcast   # ИСПРАВЛЕНО
+        send_broadcast(text_ru, text_en, text_ro, photo_url)
         return render_template('broadcast.html', success=True)
     return render_template('broadcast.html')

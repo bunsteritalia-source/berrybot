@@ -57,7 +57,9 @@ async def show_product(callback: CallbackQuery, lang):
         markup = InlineKeyboardBuilder()
         if variants:
             for v in variants:
-                markup.button(text=f"{v[f'name_{lang}']} - {v['price']} MDL", callback_data=f"addvar_{v['id']}_{cat_id}")
+                # Имя варианта всегда есть (генерируется в админке)
+                label = v[f'name_{lang}']
+                markup.button(text=f"{label} - {v['price']} MDL", callback_data=f"addvar_{v['id']}_{cat_id}")
         else:
             markup.button(text=f"Добавить в корзину ({product['base_price']} MDL)", callback_data=f"add_{prod_id}_{cat_id}")
         markup.button(text=get_text(lang, 'back'), callback_data=f"back_to_cat_{cat_id}")

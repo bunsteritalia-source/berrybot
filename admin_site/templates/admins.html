@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head><title>Администраторы</title></head>
+<body>
+  <h2>Администраторы</h2>
+  <form method="post" action="/admins/add">
+    <input name="username" placeholder="Логин" required>
+    <input name="password" type="password" placeholder="Пароль" required>
+    <input name="telegram_id" placeholder="Telegram ID">
+    <label>Уведомлять о заказах: <input type="checkbox" name="notify_orders"></label>
+    <button type="submit">Добавить</button>
+  </form>
+  <table border="1">
+    <tr><th>ID</th><th>Логин</th><th>Telegram ID</th><th>Уведомления</th><th></th></tr>
+    {% for a in admins %}
+    <tr>
+      <td>{{ a.id }}</td>
+      <td>{{ a.username }}</td>
+      <td>{{ a.telegram_id or '' }}</td>
+      <td>{{ 'Да' if a.notify_orders else 'Нет' }}</td>
+      <td>
+        <a href="/admins/toggle_notify/{{ a.id }}">Перекл.</a>
+        <a href="/admins/delete/{{ a.id }}">Удалить</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <a href="/">Назад</a>
+</body>
+</html>

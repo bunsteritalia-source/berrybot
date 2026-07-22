@@ -1,28 +1,119 @@
-<!DOCTYPE html>
-<html>
-<head><title>{% if product %}Редактировать{% else %}Добавить{% endif %} товар</title></head>
-<body>
-  <h2>{% if product %}Редактировать{% else %}Добавить{% endif %} товар</h2>
-  <form method="post" enctype="multipart/form-data">
-    <select name="category_id">
-      {% for cat in categories %}
-      <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name_ru }}</option>
-      {% endfor %}
-    </select><br>
-    <input name="name_ru" placeholder="Название RU" value="{{ product.name_ru if product else '' }}" required><br>
-    <input name="name_en" placeholder="Name EN" value="{{ product.name_en if product else '' }}"><br>
-    <input name="name_ro" placeholder="Nume RO" value="{{ product.name_ro if product else '' }}"><br>
-    <textarea name="desc_ru" placeholder="Описание RU">{{ product.description_ru if product else '' }}</textarea><br>
-    <textarea name="desc_en" placeholder="Description EN">{{ product.description_en if product else '' }}</textarea><br>
-    <textarea name="desc_ro" placeholder="Descriere RO">{{ product.description_ro if product else '' }}</textarea><br>
-    <input name="base_price" type="number" placeholder="Цена (если без вариантов)" value="{{ product.base_price if product else 0 }}"><br>
-    <label>Есть варианты: <input type="checkbox" name="has_variants" {% if product and product.has_variants %}checked{% endif %}></label><br>
-    Фото: <input type="file" name="photos" multiple><br>
-    {% if product and product.photos %}
-      Текущие фото: {{ product.photos }}
-    {% endif %}
-    <button type="submit">Сохранить</button>
-  </form>
-  <a href="/products">Назад</a>
-</body>
-</html>
+{% extends "layout.html" %}
+{% block content %}
+<h2>{% if product %}Редактировать{% else %}Добавить{% endif %} товар</h2>
+<form method="post" enctype="multipart/form-data">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label">Категория</label>
+        <select name="category_id" class="form-select" required>
+          <option value="">-- Выберите --</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name_ru }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <input name="name_ru" class="form-control" placeholder="Название RU" value="{{ product.name_ru if product else '' }}" required>
+      </div>
+      <div class="mb-3">
+        <input name="name_en" class="form-control" placeholder="Name EN" value="{{ product.name_en if product else '' }}">
+      </div>
+      <div class="mb-3">
+        <input name="name_ro" class="form-control" placeholder="Nume RO" value="{{ product.name_ro if product else '' }}">
+      </div>
+      <div class="mb-3">
+        <textarea name="desc_ru" class="form-control" placeholder="Описание RU">{{ product.description_ru if product else '' }}</textarea>
+      </div>
+      <div class="mb-3">
+        <textarea name="desc_en" class="form-control" placeholder="Description EN">{{ product.description_en if product else '' }}</textarea>
+      </div>
+      <div class="mb-3">
+        <textarea name="desc_ro" class="form-control" placeholder="Descriere RO">{{ product.description_ro if product else '' }}</textarea>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label class="form-label">Базовая цена (если без вариантов)</label>
+        <input name="base_price" type="number" class="form-control" value="{{ product.base_price if product else 0 }}">
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="has_variants" id="hasVariants" {% if product and product.has_variants %}checked{% endif %}>
+        <label class="form-check-label" for="hasVariants">Есть варианты (количество клубник и цены)</label>
+      </div>
+      <!-- Блок вариантов (показывается, если есть галочка) -->
+      <div id="variantsBlock" class="mb-3" style="display: {% if product and product.has_variants %}block{% else %}none{% endif %};">
+        <label class="form-label">Варианты</label>
+        <div id="variantsContainer">
+          <!-- Существующие варианты подгрузятся через JS или можно отрендерить здесь -->
+          {% if product and variants %}
+            {% for v in variants %}
+            <div class="input-group mb-2 variant-row">
+              <input type="text" name="var_name_ru[]" class="form-control" placeholder="RU" value="{{ v.name_ru }}">
+              <input type="text" name="var_name_en[]" class="form-control" placeholder="EN" value="{{ v.name_en }}">
+              <input type="text" name="var_name_ro[]" class="form-control" placeholder="RO" value="{{ v.name_ro }}">
+              <input type="number" name="var_price[]" class="form-control" placeholder="Цена" value="{{ v.price }}">
+              <button type="button" class="btn btn-outline-danger remove-variant"><i class="bi bi-trash"></i></button>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="addVariant"><i class="bi bi-plus"></i> Добавить вариант</button>
+      </div>
+      <!-- Загрузка фото с drag-and-drop -->
+      <div class="mb-3">
+        <label class="form-label">Фотографии</label>
+        <div class="drop-zone" id="photoDropZone">
+          <i class="bi bi-cloud-upload display-4"></i>
+          <p>Перетащите фото сюда или нажмите для выбора</p>
+          <input type="file" name="photos" multiple accept="image/*" data-preview-id="photoPreview" style="display:none;" onclick="this.parent.querySelector('p').click()">
+        </div>
+        <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-2">
+          {% if product and product.photos %}
+            {% for ph in product.photos %}
+            <img src="{{ ph }}" class="preview-image">
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Сохранить</button>
+  <a href="/products" class="btn btn-outline-secondary">Отмена</a>
+</form>
+
+<script>
+  // Показать/скрыть блок вариантов при переключении чекбокса
+  document.getElementById('hasVariants').addEventListener('change', function() {
+    document.getElementById('variantsBlock').style.display = this.checked ? 'block' : 'none';
+  });
+
+  // Добавление строки варианта
+  document.getElementById('addVariant').addEventListener('click', function() {
+    const container = document.getElementById('variantsContainer');
+    const row = document.createElement('div');
+    row.className = 'input-group mb-2 variant-row';
+    row.innerHTML = `
+      <input type="text" name="var_name_ru[]" class="form-control" placeholder="RU" required>
+      <input type="text" name="var_name_en[]" class="form-control" placeholder="EN">
+      <input type="text" name="var_name_ro[]" class="form-control" placeholder="RO">
+      <input type="number" name="var_price[]" class="form-control" placeholder="Цена" required>
+      <button type="button" class="btn btn-outline-danger remove-variant"><i class="bi bi-trash"></i></button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.remove-variant').addEventListener('click', () => row.remove());
+  });
+
+  // Удаление варианта
+  document.querySelectorAll('.remove-variant').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.variant-row').remove());
+  });
+
+  // Drag-and-drop открытие файлового диалога
+  document.getElementById('photoDropZone').addEventListener('click', function(e) {
+    if (e.target.tagName !== 'INPUT') {
+      this.querySelector('input[type="file"]').click();
+    }
+  });
+</script>
+{% endblock %}

@@ -38,6 +38,7 @@ async def init_db():
                 name_en TEXT,
                 name_ro TEXT,
                 price INTEGER,
+                quantity INTEGER DEFAULT 0,
                 FOREIGN KEY (product_id) REFERENCES products(id)
             );
             CREATE TABLE IF NOT EXISTS admins (
@@ -85,7 +86,7 @@ async def init_db():
                 ('instagram_url', 'https://www.instagram.com/berry_bouquet.md/'),
                 ('tiktok_url', 'https://www.tiktok.com/@berry_bouquet_md.md');
         """)
-        # Удаляем старого админа (если был) и создаём нового с правильным паролем
+        # Удаляем старого админа и создаём нового с паролем admin123
         await db.execute("DELETE FROM admins WHERE username = 'admin'")
         hashed = generate_password_hash('admin123')
         await db.execute("INSERT OR IGNORE INTO admins (username, password_hash) VALUES (?, ?)", ('admin', hashed))

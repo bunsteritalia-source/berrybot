@@ -1,13 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head><title>Berry Admin Login</title></head>
-<body>
-  <h2>Вход</h2>
-  {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
-  <form method="post">
-    <input name="username" placeholder="Логин" required><br>
-    <input name="password" type="password" placeholder="Пароль" required><br>
-    <button type="submit">Войти</button>
-  </form>
-</body>
-</html>
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-4">
+    <div class="card shadow">
+      <div class="card-body p-4">
+        <h3 class="text-center mb-4">Вход в админку</h3>
+        {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+        <form method="post">
+          <div class="mb-3">
+            <input name="username" class="form-control" placeholder="Логин" required>
+          </div>
+          <div class="mb-3">
+            <input name="password" type="password" class="form-control" placeholder="Пароль" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Войти</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

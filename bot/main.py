@@ -10,11 +10,8 @@ from bot.middlewares.language import LanguageMiddleware
 from db import init_db
 import aiosqlite
 
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
-def home():
-    return "Bot is running"
+# Импортируем админское приложение
+from admin_site.app import app as admin_app
 
 def ping_self():
     while True:
@@ -68,7 +65,8 @@ async def main():
 
 def run_flask():
     port = int(os.getenv('PORT', 10000))
-    flask_app.run(host='0.0.0.0', port=port)
+    # Запускаем админское приложение, а не отдельный Flask
+    admin_app.run(host='0.0.0.0', port=port)
 
 if __name__ == "__main__":
     threading.Thread(target=run_flask).start()

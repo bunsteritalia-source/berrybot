@@ -1,50 +1,35 @@
-{% extends "layout.html" %}
-{% block content %}
-<h2 class="mb-4">Рассылка всем пользователям</h2>
-{% if success %}<div class="alert alert-success">Рассылка успешно запущена!</div>{% endif %}
-<form method="post" enctype="multipart/form-data">
-  <div class="row">
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header"><h5>Текст сообщения</h5></div>
-        <div class="card-body">
-          <div class="mb-3">
-            <label class="form-label">Русский</label>
-            <textarea name="text_ru" class="form-control" rows="2" placeholder="Текст на русском..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">English</label>
-            <textarea name="text_en" class="form-control" rows="2" placeholder="Text in English..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Română</label>
-            <textarea name="text_ro" class="form-control" rows="2" placeholder="Text în română..."></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header"><h5>Прикрепить фото (опционально)</h5></div>
-        <div class="card-body">
-          <div class="drop-zone" id="broadcastPhotoDropZone">
-            <i class="bi bi-camera"></i>
-            <p>Перетащите фото или нажмите для выбора</p>
-            <input type="file" name="photo" accept="image/*" data-preview-id="broadcastPhotoPreview" style="display:none;" onclick="this.parent.querySelector('p').click()">
-          </div>
-          <div id="broadcastPhotoPreview" class="mt-2"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <button type="submit" class="btn btn-danger btn-lg"><i class="bi bi-send"></i> Отправить рассылку</button>
-</form>
+import asyncio
+import os
+import aiosqlite
 
-<script>
-  document.getElementById('broadcastPhotoDropZone').addEventListener('click', function(e) {
-    if (e.target.tagName !== 'INPUT') {
-      this.querySelector('input[type="file"]').click();
-    }
-  });
-</script>
-{% endblock %}
+def send_broadcast(text_ru, text_en, text_ro, photo_url=None):
+    """Потокобезопасный вызов рассылки из любого потока (например, из Flask)"""
+    from bot import bot          # импорт из bot/__init__.py
+    from bot.main import dp      # доступ к диспетчеру и его event loop
+
+    async def _broadcast():
+        async with aiosqlite.connect(os.getenv("DB_PATH", "berry.db")) as db:
+            cursor = await db.execute("SELECT user_id, language FROM users")
+            users = await cursor.fetchall()
+        for user_id, lang in users:
+            try:
+                if lang == 'ru':
+                    txt = text_ru
+                elif lang == 'ro':
+                    txt = text_ro
+                else:
+                    txt = text_en
+                if photo_url:
+                    base_url = os.getenv("RENDER_EXTERNAL_URL", "").rstrip('/')
+                    full_url = base_url + photo_url
+                    await bot.send_photo(user_id, photo=full_url, caption=txt)
+                else:
+                    await bot.send_message(user_id, txt)
+                await asyncio.sleep(0.05)  # чтобы не упереться в лимиты Telegram
+            except Exception as e:
+                print(f"Broadcast error for {user_id}: {e}")
+
+    # Получаем event loop бота (он уже запущен в главном потоке)
+    loop = dp.loop if hasattr(dp, 'loop') else asyncio.get_event_loop()
+    # Потокобезопасно добавляем корутину в этот цикл
+    asyncio.run_coroutine_threadsafe(_broadcast(), loop)

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Настройки</title></head>
+<body>
+  <h2>Настройки</h2>
+  <form method="post" enctype="multipart/form-data">
+    <h3>Текст информации (RU)</h3>
+    <textarea name="info_text_ru">{{ config['info_text_ru'] }}</textarea>
+    <h3>Info text (EN)</h3>
+    <textarea name="info_text_en">{{ config['info_text_en'] }}</textarea>
+    <h3>Text informativ (RO)</h3>
+    <textarea name="info_text_ro">{{ config['info_text_ro'] }}</textarea>
+    <h3>Ссылки</h3>
+    <input name="site_url" value="{{ config['site_url'] }}"><br>
+    <input name="facebook_url" value="{{ config['facebook_url'] }}"><br>
+    <input name="instagram_url" value="{{ config['instagram_url'] }}"><br>
+    <input name="tiktok_url" value="{{ config['tiktok_url'] }}"><br>
+    <h3>Изображение для информации</h3>
+    {% if config['info_image'] %}<img src="{{ config['info_image'] }}" width="100"><br>{% endif %}
+    <input type="file" name="info_image"><br>
+    <button type="submit">Сохранить</button>
+  </form>
+  <a href="/">Назад</a>
+</body>
+</html>

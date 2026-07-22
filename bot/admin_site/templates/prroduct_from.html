@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><title>{% if product %}Редактировать{% else %}Добавить{% endif %} товар</title></head>
+<body>
+  <h2>{% if product %}Редактировать{% else %}Добавить{% endif %} товар</h2>
+  <form method="post" enctype="multipart/form-data">
+    <select name="category_id">
+      {% for cat in categories %}
+      <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name_ru }}</option>
+      {% endfor %}
+    </select><br>
+    <input name="name_ru" placeholder="Название RU" value="{{ product.name_ru if product else '' }}" required><br>
+    <input name="name_en" placeholder="Name EN" value="{{ product.name_en if product else '' }}"><br>
+    <input name="name_ro" placeholder="Nume RO" value="{{ product.name_ro if product else '' }}"><br>
+    <textarea name="desc_ru" placeholder="Описание RU">{{ product.description_ru if product else '' }}</textarea><br>
+    <textarea name="desc_en" placeholder="Description EN">{{ product.description_en if product else '' }}</textarea><br>
+    <textarea name="desc_ro" placeholder="Descriere RO">{{ product.description_ro if product else '' }}</textarea><br>
+    <input name="base_price" type="number" placeholder="Цена (если без вариантов)" value="{{ product.base_price if product else 0 }}"><br>
+    <label>Есть варианты: <input type="checkbox" name="has_variants" {% if product and product.has_variants %}checked{% endif %}></label><br>
+    Фото: <input type="file" name="photos" multiple><br>
+    {% if product and product.photos %}
+      Текущие фото: {{ product.photos }}
+    {% endif %}
+    <button type="submit">Сохранить</button>
+  </form>
+  <a href="/products">Назад</a>
+</body>
+</html>

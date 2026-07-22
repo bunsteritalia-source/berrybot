@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head><title>Категории</title></head>
+<body>
+  <h2>Категории</h2>
+  <form method="post" action="/categories/add">
+    <input name="name_ru" placeholder="Название RU" required>
+    <input name="name_en" placeholder="Name EN">
+    <input name="name_ro" placeholder="Nume RO">
+    <button type="submit">Добавить</button>
+  </form>
+  <table border="1">
+    <tr><th>ID</th><th>RU</th><th>EN</th><th>RO</th><th></th></tr>
+    {% for cat in categories %}
+    <tr>
+      <td>{{ cat.id }}</td>
+      <td>{{ cat.name_ru }}</td>
+      <td>{{ cat.name_en }}</td>
+      <td>{{ cat.name_ro }}</td>
+      <td><a href="/categories/delete/{{ cat.id }}">Удалить</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <a href="/">Назад</a>
+</body>
+</html>

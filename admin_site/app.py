@@ -1,16 +1,19 @@
 import os
+import json
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.utils import secure_filename
 from admin_site.auth import login_required, authenticate
 from models import query_db, get_setting, set_setting
 from werkzeug.security import generate_password_hash
-import json
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret')
 UPLOAD_FOLDER = os.path.join('admin_site', 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Добавляем фильтр для шаблонов, чтобы работать с JSON-полями
+app.add_template_filter(lambda s: json.loads(s) if s else [], 'from_json')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -38,20 +41,26 @@ def dashboard():
 @app.route('/products')
 @login_required
 def products():
-    prods = query_db("SELECT * FROM products ORDER BY id")
+    prods = query_db("""
+        SELECT p.*, 
+               (SELECT name_ru FROM categories WHERE id = p.category_id) as category_name,
+               (SELECT MIN(price) FROM product_variants WHERE product_id = p.id) as min_price
+        FROM products p
+        ORDER BY p.id
+    """)
     return render_template('products.html', products=prods)
 
 @app.route('/products/add', methods=['GET', 'POST'])
 @login_required
 def product_add():
     if request.method == 'POST':
-        name_ru = request.form['name_ru']
-        name_en = request.form['name_en']
-        name_ro = request.form['name_ro']
+        name_ru = request.form.get('name_ru', '')
+        name_en = request.form.get('name_en', '')
+        name_ro = request.form.get('name_ro', '')
         desc_ru = request.form.get('desc_ru', '')
         desc_en = request.form.get('desc_en', '')
         desc_ro = request.form.get('desc_ro', '')
-        category_id = request.form['category_id']
+        category_id = request.form.get('category_id', '')
         base_price = request.form.get('base_price', 0)
         has_variants = 1 if request.form.get('has_variants') else 0
         photos = []
@@ -60,6 +69,8 @@ def product_add():
                 filename = secure_filename(file.filename)
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 photos.append('/static/uploads/' + filename)
+        if not name_ru or not category_id:
+            return "Название (RU) и категория обязательны", 400
         query_db("INSERT INTO products (category_id, name_ru, name_en, name_ro, description_ru, description_en, description_ro, base_price, has_variants, photos) VALUES (?,?,?,?,?,?,?,?,?,?)",
                  [category_id, name_ru, name_en, name_ro, desc_ru, desc_en, desc_ro, base_price, has_variants, json.dumps(photos)], commit=True)
         return redirect(url_for('products'))
@@ -73,13 +84,13 @@ def product_edit(product_id):
     if not product:
         return redirect(url_for('products'))
     if request.method == 'POST':
-        name_ru = request.form['name_ru']
-        name_en = request.form['name_en']
-        name_ro = request.form['name_ro']
+        name_ru = request.form.get('name_ru', '')
+        name_en = request.form.get('name_en', '')
+        name_ro = request.form.get('name_ro', '')
         desc_ru = request.form.get('desc_ru', '')
         desc_en = request.form.get('desc_en', '')
         desc_ro = request.form.get('desc_ro', '')
-        category_id = request.form['category_id']
+        category_id = request.form.get('category_id', '')
         base_price = request.form.get('base_price', 0)
         has_variants = 1 if request.form.get('has_variants') else 0
         photos = json.loads(product['photos']) if product['photos'] else []
@@ -111,12 +122,20 @@ def variants(product_id):
 @app.route('/products/<int:product_id>/variants/add', methods=['POST'])
 @login_required
 def variant_add(product_id):
-    name_ru = request.form['name_ru']
-    name_en = request.form['name_en']
-    name_ro = request.form['name_ro']
-    price = request.form['price']
-    query_db("INSERT INTO product_variants (product_id, name_ru, name_en, name_ro, price) VALUES (?,?,?,?,?)",
-             [product_id, name_ru, name_en, name_ro, price], commit=True)
+    name_ru = request.form.get('name_ru', '')
+    name_en = request.form.get('name_en', '')
+    name_ro = request.form.get('name_ro', '')
+    price = request.form.get('price', 0)
+    quantity = request.form.get('quantity', 0)
+    # Если названия не указаны, формируем автоматически
+    if not name_ru:
+        name_ru = f'{quantity} шт'
+    if not name_en:
+        name_en = f'{quantity} pcs'
+    if not name_ro:
+        name_ro = f'{quantity} buc'
+    query_db("INSERT INTO product_variants (product_id, name_ru, name_en, name_ro, price, quantity) VALUES (?,?,?,?,?,?)",
+             [product_id, name_ru, name_en, name_ro, price, quantity], commit=True)
     return redirect(url_for('variants', product_id=product_id))
 
 @app.route('/variants/delete/<int:variant_id>')
@@ -139,8 +158,8 @@ def categories():
 @login_required
 def category_add():
     name_ru = request.form['name_ru']
-    name_en = request.form['name_en']
-    name_ro = request.form['name_ro']
+    name_en = request.form.get('name_en', '')
+    name_ro = request.form.get('name_ro', '')
     query_db("INSERT INTO categories (name_ru, name_en, name_ro) VALUES (?,?,?)", [name_ru, name_en, name_ro], commit=True)
     return redirect(url_for('categories'))
 
@@ -209,14 +228,14 @@ def settings():
 @login_required
 def broadcast():
     if request.method == 'POST':
-        text_ru = request.form['text_ru']
-        text_en = request.form['text_en']
-        text_ro = request.form['text_ro']
+        text_ru = request.form.get('text_ru', '')
+        text_en = request.form.get('text_en', '')
+        text_ro = request.form.get('text_ro', '')
         photo = request.files.get('photo')
         photo_url = None
         if photo and photo.filename:
             filename = secure_filename(photo.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             photo_url = '/static/uploads/' + filename
         from broadcast import send_broadcast
         send_broadcast(text_ru, text_en, text_ro, photo_url)

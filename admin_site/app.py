@@ -216,9 +216,9 @@ def broadcast():
         photo_url = None
         if photo and photo.filename:
             filename = secure_filename(photo.filename)
-            photo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             photo_url = '/static/uploads/' + filename
-        from broadcast import send_broadcast   # ИСПРАВЛЕНО
+        from broadcast import send_broadcast
         send_broadcast(text_ru, text_en, text_ro, photo_url)
         return render_template('broadcast.html', success=True)
     return render_template('broadcast.html')

@@ -39,38 +39,24 @@
       </div>
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" name="has_variants" id="hasVariants" {% if product and product.has_variants %}checked{% endif %}>
-        <label class="form-check-label" for="hasVariants">Есть варианты (количество клубник и цены)</label>
+        <label class="form-check-label" for="hasVariants">Есть варианты (количество и цены)</label>
       </div>
-      <!-- Блок вариантов (показывается, если есть галочка) -->
-      <div id="variantsBlock" class="mb-3" style="display: {% if product and product.has_variants %}block{% else %}none{% endif %};">
-        <label class="form-label">Варианты</label>
-        <div id="variantsContainer">
-          <!-- Существующие варианты подгрузятся через JS или можно отрендерить здесь -->
-          {% if product and variants %}
-            {% for v in variants %}
-            <div class="input-group mb-2 variant-row">
-              <input type="text" name="var_name_ru[]" class="form-control" placeholder="RU" value="{{ v.name_ru }}">
-              <input type="text" name="var_name_en[]" class="form-control" placeholder="EN" value="{{ v.name_en }}">
-              <input type="text" name="var_name_ro[]" class="form-control" placeholder="RO" value="{{ v.name_ro }}">
-              <input type="number" name="var_price[]" class="form-control" placeholder="Цена" value="{{ v.price }}">
-              <button type="button" class="btn btn-outline-danger remove-variant"><i class="bi bi-trash"></i></button>
-            </div>
-            {% endfor %}
-          {% endif %}
-        </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm" id="addVariant"><i class="bi bi-plus"></i> Добавить вариант</button>
+      {% if product %}
+      <div class="mb-3">
+        <a href="/products/{{ product.id }}/variants" class="btn btn-outline-info btn-sm"><i class="bi bi-sliders"></i> Настроить варианты</a>
       </div>
-      <!-- Загрузка фото с drag-and-drop -->
+      {% endif %}
       <div class="mb-3">
         <label class="form-label">Фотографии</label>
         <div class="drop-zone" id="photoDropZone">
           <i class="bi bi-cloud-upload display-4"></i>
-          <p>Перетащите фото сюда или нажмите для выбора</p>
-          <input type="file" name="photos" multiple accept="image/*" data-preview-id="photoPreview" style="display:none;" onclick="this.parent.querySelector('p').click()">
+          <p>Перетащите фото сюда (можно по одному) или нажмите для выбора</p>
+          <input type="file" id="photoInput" name="photos" multiple accept="image/*" data-preview-id="photoPreview" style="display:none;">
         </div>
         <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-2">
           {% if product and product.photos %}
-            {% for ph in product.photos %}
+            {% set photos_list = product.photos | from_json %}
+            {% for ph in photos_list %}
             <img src="{{ ph }}" class="preview-image">
             {% endfor %}
           {% endif %}
@@ -83,37 +69,69 @@
 </form>
 
 <script>
-  // Показать/скрыть блок вариантов при переключении чекбокса
-  document.getElementById('hasVariants').addEventListener('change', function() {
-    document.getElementById('variantsBlock').style.display = this.checked ? 'block' : 'none';
-  });
+  // Массив для накопления файлов
+  let accumulatedFiles = [];
 
-  // Добавление строки варианта
-  document.getElementById('addVariant').addEventListener('click', function() {
-    const container = document.getElementById('variantsContainer');
-    const row = document.createElement('div');
-    row.className = 'input-group mb-2 variant-row';
-    row.innerHTML = `
-      <input type="text" name="var_name_ru[]" class="form-control" placeholder="RU" required>
-      <input type="text" name="var_name_en[]" class="form-control" placeholder="EN">
-      <input type="text" name="var_name_ro[]" class="form-control" placeholder="RO">
-      <input type="number" name="var_price[]" class="form-control" placeholder="Цена" required>
-      <button type="button" class="btn btn-outline-danger remove-variant"><i class="bi bi-trash"></i></button>
-    `;
-    container.appendChild(row);
-    row.querySelector('.remove-variant').addEventListener('click', () => row.remove());
-  });
+  const dropZone = document.getElementById('photoDropZone');
+  const fileInput = document.getElementById('photoInput');
+  const previewDiv = document.getElementById('photoPreview');
 
-  // Удаление варианта
-  document.querySelectorAll('.remove-variant').forEach(btn => {
-    btn.addEventListener('click', () => btn.closest('.variant-row').remove());
-  });
-
-  // Drag-and-drop открытие файлового диалога
-  document.getElementById('photoDropZone').addEventListener('click', function(e) {
-    if (e.target.tagName !== 'INPUT') {
-      this.querySelector('input[type="file"]').click();
+  // При клике на зону открываем диалог выбора файлов
+  dropZone.addEventListener('click', (e) => {
+    if (e.target !== fileInput) {
+      fileInput.click();
     }
   });
+
+  // Обработчик выбора файлов через диалог
+  fileInput.addEventListener('change', () => {
+    addFiles(fileInput.files);
+    updateFileInput();
+  });
+
+  // Drag-and-drop события
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+
+  dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+  dropZone.addEventListener('drop', (e) => {
+    dropZone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      addFiles(files);
+      updateFileInput();
+    }
+  });
+
+  // Добавляем файлы в массив (исключая дубли по имени и размеру)
+  function addFiles(newFiles) {
+    for (let file of newFiles) {
+      if (!accumulatedFiles.some(f => f.name === file.name && f.size === file.size)) {
+        accumulatedFiles.push(file);
+        // Показываем миниатюру
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'preview-image';
+          previewDiv.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
+
+  // Обновляем input, чтобы отправить все файлы
+  function updateFileInput() {
+    const dt = new DataTransfer();
+    accumulatedFiles.forEach(f => dt.items.add(f));
+    fileInput.files = dt.files;
+  }
 </script>
 {% endblock %}

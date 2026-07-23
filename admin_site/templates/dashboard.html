@@ -1,25 +1,66 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1 class="mb-4">Добро пожаловать, администратор!</h1>
+<h1 class="mb-4">🍓 Панель управления Berry Bouquet</h1>
 <div class="row g-4">
-  <div class="col-md-3">
-    <div class="card text-bg-primary shadow">
+  <div class="col-md-4">
+    <div class="card text-bg-primary shadow-sm">
       <div class="card-body text-center">
-        <i class="bi bi-box-seam display-4"></i>
+        <i class="bi bi-box-seam display-3"></i>
         <h5 class="mt-2">Товары</h5>
-        <a href="/products" class="btn btn-light btn-sm mt-2">Управлять</a>
+        <p class="small">Управление каталогом, ценами, фото</p>
+        <a href="/products" class="btn btn-light btn-sm">Перейти</a>
       </div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card text-bg-success shadow">
+  <div class="col-md-4">
+    <div class="card text-bg-success shadow-sm">
       <div class="card-body text-center">
-        <i class="bi bi-tags display-4"></i>
+        <i class="bi bi-tags display-3"></i>
         <h5 class="mt-2">Категории</h5>
-        <a href="/categories" class="btn btn-light btn-sm mt-2">Управлять</a>
+        <p class="small">Создание и удаление категорий</p>
+        <a href="/categories" class="btn btn-light btn-sm">Перейти</a>
       </div>
     </div>
   </div>
-  <!-- ... аналогичные карточки для других разделов -->
+  <div class="col-md-4">
+    <div class="card text-bg-warning shadow-sm">
+      <div class="card-body text-center">
+        <i class="bi bi-sliders display-3"></i>
+        <h5 class="mt-2">Пресеты</h5>
+        <p class="small">Готовые наборы вариантов (VIP, Стандарт и др.)</p>
+        <a href="/presets" class="btn btn-light btn-sm">Перейти</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-info shadow-sm">
+      <div class="card-body text-center">
+        <i class="bi bi-people display-3"></i>
+        <h5 class="mt-2">Администраторы</h5>
+        <p class="small">Добавление сотрудников и настройка уведомлений</p>
+        <a href="/admins" class="btn btn-light btn-sm">Перейти</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-secondary shadow-sm">
+      <div class="card-body text-center">
+        <i class="bi bi-gear display-3"></i>
+        <h5 class="mt-2">Настройки</h5>
+        <p class="small">Тексты, ссылки, изображения</p>
+        <a href="/settings" class="btn btn-light btn-sm">Перейти</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-bg-danger shadow-sm">
+      <div class="card-body text-center">
+        <i class="bi bi-megaphone display-3"></i>
+        <h5 class="mt-2">Рассылка</h5>
+        <p class="small">Отправить сообщение всем клиентам</p>
+        <a href="/broadcast" class="btn btn-light btn-sm">Перейти</a>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

@@ -1,9 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
 <h2>{% if product %}Редактировать{% else %}Добавить{% endif %} товар</h2>
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" id="productForm">
   <div class="row">
     <div class="col-md-6">
+      <!-- все поля как раньше: категория, названия, описания -->
       <div class="mb-3">
         <label class="form-label">Категория</label>
         <select name="category_id" class="form-select" required>
@@ -39,19 +40,38 @@
       </div>
       <div class="form-check mb-3">
         <input class="form-check-input" type="checkbox" name="has_variants" id="hasVariants" {% if product and product.has_variants %}checked{% endif %}>
-        <label class="form-check-label" for="hasVariants">Есть варианты (количество и цены)</label>
+        <label class="form-check-label" for="hasVariants">Есть варианты</label>
       </div>
+
+      <!-- Блок выбора пресета (только если есть варианты) -->
+      <div class="mb-3" id="presetBlock" style="display: {% if product and product.has_variants %}block{% else %}none{% endif %};">
+        <label class="form-label">Пресет вариантов</label>
+        <select name="preset_id" class="form-select" id="presetSelect">
+          <option value="">-- Не использовать пресет --</option>
+          {% for pr in presets %}
+          <option value="{{ pr.id }}">{{ pr.name_ru }}</option>
+          {% endfor %}
+        </select>
+        {% if product %}
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" name="replace_preset" id="replacePreset">
+          <label class="form-check-label" for="replacePreset">Заменить существующие варианты этим пресетом при сохранении</label>
+        </div>
+        {% endif %}
+      </div>
+
       {% if product %}
       <div class="mb-3">
-        <a href="/products/{{ product.id }}/variants" class="btn btn-outline-info btn-sm"><i class="bi bi-sliders"></i> Настроить варианты</a>
+        <a href="/products/{{ product.id }}/variants" class="btn btn-outline-info btn-sm"><i class="bi bi-sliders"></i> Текущие варианты</a>
       </div>
       {% endif %}
+
+      <!-- Фото (drag-and-drop) -->
       <div class="mb-3">
         <label class="form-label">Фотографии</label>
         <div class="drop-zone" id="photoDropZone">
           <i class="bi bi-cloud-upload display-4"></i>
           <p>Перетащите фото сюда (можно по одному) или нажмите для выбора</p>
-          <input type="file" id="photoInput" name="photos" multiple accept="image/*" data-preview-id="photoPreview" style="display:none;">
         </div>
         <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-2">
           {% if product and product.photos %}
@@ -72,99 +92,80 @@
 </form>
 
 <script>
-  let accumulatedFiles = [];
+  // Показать/скрыть блок пресета
+  document.getElementById('hasVariants').addEventListener('change', function() {
+    document.getElementById('presetBlock').style.display = this.checked ? 'block' : 'none';
+  });
 
+  // Drag-and-drop фото (тот же надёжный код, что и раньше)
   const dropZone = document.getElementById('photoDropZone');
-  const fileInput = document.getElementById('photoInput');
   const previewContainer = document.getElementById('photoPreview');
+  const productForm = document.getElementById('productForm');
 
-  // Клик по зоне открывает выбор файлов
-  dropZone.addEventListener('click', (e) => {
-    if (e.target !== fileInput) {
-      fileInput.value = '';  // сброс, чтобы событие change сработало даже при выборе тех же файлов
-      fileInput.click();
-    }
+  dropZone.addEventListener('click', () => {
+    const tempInput = document.createElement('input');
+    tempInput.type = 'file';
+    tempInput.multiple = true;
+    tempInput.accept = 'image/*';
+    tempInput.style.display = 'none';
+    document.body.appendChild(tempInput);
+    tempInput.addEventListener('change', () => {
+      if (tempInput.files.length > 0) {
+        handleFiles(tempInput.files);
+      }
+      tempInput.remove();
+    });
+    tempInput.click();
   });
 
-  // При выборе файлов через диалог
-  fileInput.addEventListener('change', () => {
-    if (fileInput.files.length > 0) {
-      addFiles(fileInput.files);
-      fileInput.value = '';  // очищаем input, чтобы при новом выборе тех же файлов снова сработало
-      updateFileInput();
-    }
-  });
-
-  // Drag & drop
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, (e) => {
+    dropZone.addEventListener(eventName, e => {
       e.preventDefault();
       e.stopPropagation();
     });
   });
-
   dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-
-  dropZone.addEventListener('drop', (e) => {
+  dropZone.addEventListener('drop', e => {
     dropZone.classList.remove('dragover');
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      addFiles(files);
-      updateFileInput();
+    if (e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
     }
   });
 
-  // Добавление файлов в accumulatedFiles, исключая дубликаты по имени и размеру
-  function addFiles(newFiles) {
-    for (let file of newFiles) {
-      // Проверяем, нет ли уже такого файла
-      if (!accumulatedFiles.some(f => f.name === file.name && f.size === file.size)) {
-        accumulatedFiles.push(file);
-        renderPreview(file);
-      }
-    }
-  }
+  function handleFiles(files) {
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.name = 'photos';
+      input.style.display = 'none';
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      productForm.appendChild(input);
 
-  // Создание превью для нового файла с кнопкой удаления
-  function renderPreview(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
       const div = document.createElement('div');
       div.className = 'position-relative new-photo';
-      div.dataset.filename = file.name;
-      div.dataset.filesize = file.size;
-
       const img = document.createElement('img');
-      img.src = e.target.result;
       img.className = 'preview-image';
+      const reader = new FileReader();
+      reader.onload = e => { img.src = e.target.result; };
+      reader.readAsDataURL(file);
       div.appendChild(img);
 
-      // Кнопка удаления
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'btn-close position-absolute top-0 end-0';
-      delBtn.style.background = 'rgba(255,255,255,0.8)';
+      delBtn.style.background = 'rgba(255,255,255,0.9)';
       delBtn.style.borderRadius = '50%';
       delBtn.onclick = () => {
-        // Удаляем файл из массива
-        accumulatedFiles = accumulatedFiles.filter(f => !(f.name === file.name && f.size === file.size));
-        // Удаляем превью
+        input.remove();
         div.remove();
-        updateFileInput();
       };
       div.appendChild(delBtn);
-
       previewContainer.appendChild(div);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // Обновляем fileList input'а для отправки формы
-  function updateFileInput() {
-    const dt = new DataTransfer();
-    accumulatedFiles.forEach(f => dt.items.add(f));
-    fileInput.files = dt.files;
+    });
   }
 </script>
 {% endblock %}

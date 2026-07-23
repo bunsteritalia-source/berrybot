@@ -8,9 +8,13 @@ from bot import bot, dp
 from bot.handlers import start, catalog, cart, order, admin
 from bot.middlewares.language import LanguageMiddleware
 from db import init_db
+import aiosqlite
 
 # Импортируем админское приложение
 from admin_site.app import app as admin_app
+
+# ID главного администратора (для бэкапов)
+MAIN_ADMIN_ID = int(os.getenv('MAIN_ADMIN_ID', '7942408433'))
 
 def ping_self():
     while True:
@@ -22,6 +26,29 @@ def ping_self():
         except:
             pass
 
+async def backup_database():
+    """Отправка базы данных главному админу"""
+    try:
+        db_path = os.getenv("DB_PATH", "berry.db")
+        if os.path.exists(db_path):
+            with open(db_path, 'rb') as f:
+                await bot.send_document(MAIN_ADMIN_ID, f, caption="🔄 Автоматический бэкап базы данных")
+        else:
+            await bot.send_message(MAIN_ADMIN_ID, "⚠️ Файл базы данных не найден!")
+    except Exception as e:
+        print(f"Backup failed: {e}")
+
+async def restore_database(file_id):
+    """Скачивает файл по file_id и заменяет текущую базу"""
+    try:
+        db_path = os.getenv("DB_PATH", "berry.db")
+        file = await bot.get_file(file_id)
+        await bot.download_file(file.file_path, db_path)
+        return True
+    except Exception as e:
+        print(f"Restore failed: {e}")
+        return False
+
 async def main():
     await init_db()
     dp.message.middleware(LanguageMiddleware())
@@ -32,6 +59,15 @@ async def main():
     dp.include_router(order.router)
     dp.include_router(admin.router)
     dp.loop = asyncio.get_event_loop()
+
+    # Запланируем бэкап каждый час (3600 секунд)
+    async def periodic_backup():
+        while True:
+            await asyncio.sleep(3600)
+            await backup_database()
+
+    asyncio.create_task(periodic_backup())
+
     await dp.start_polling(bot)
 
 def run_flask():

@@ -57,7 +57,10 @@
           {% if product and product.photos %}
             {% set photos_list = product.photos | from_json %}
             {% for ph in photos_list %}
-            <img src="{{ ph }}" class="preview-image">
+            <div class="position-relative existing-photo">
+              <img src="{{ ph }}" class="preview-image">
+              <span class="badge bg-secondary position-absolute top-0 start-0">сущ.</span>
+            </div>
             {% endfor %}
           {% endif %}
         </div>
@@ -69,27 +72,30 @@
 </form>
 
 <script>
-  // Массив для накопления файлов
   let accumulatedFiles = [];
 
   const dropZone = document.getElementById('photoDropZone');
   const fileInput = document.getElementById('photoInput');
-  const previewDiv = document.getElementById('photoPreview');
+  const previewContainer = document.getElementById('photoPreview');
 
-  // При клике на зону открываем диалог выбора файлов
+  // Клик по зоне открывает выбор файлов
   dropZone.addEventListener('click', (e) => {
     if (e.target !== fileInput) {
+      fileInput.value = '';  // сброс, чтобы событие change сработало даже при выборе тех же файлов
       fileInput.click();
     }
   });
 
-  // Обработчик выбора файлов через диалог
+  // При выборе файлов через диалог
   fileInput.addEventListener('change', () => {
-    addFiles(fileInput.files);
-    updateFileInput();
+    if (fileInput.files.length > 0) {
+      addFiles(fileInput.files);
+      fileInput.value = '';  // очищаем input, чтобы при новом выборе тех же файлов снова сработало
+      updateFileInput();
+    }
   });
 
-  // Drag-and-drop события
+  // Drag & drop
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     dropZone.addEventListener(eventName, (e) => {
       e.preventDefault();
@@ -109,25 +115,52 @@
     }
   });
 
-  // Добавляем файлы в массив (исключая дубли по имени и размеру)
+  // Добавление файлов в accumulatedFiles, исключая дубликаты по имени и размеру
   function addFiles(newFiles) {
     for (let file of newFiles) {
+      // Проверяем, нет ли уже такого файла
       if (!accumulatedFiles.some(f => f.name === file.name && f.size === file.size)) {
         accumulatedFiles.push(file);
-        // Показываем миниатюру
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.className = 'preview-image';
-          previewDiv.appendChild(img);
-        };
-        reader.readAsDataURL(file);
+        renderPreview(file);
       }
     }
   }
 
-  // Обновляем input, чтобы отправить все файлы
+  // Создание превью для нового файла с кнопкой удаления
+  function renderPreview(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const div = document.createElement('div');
+      div.className = 'position-relative new-photo';
+      div.dataset.filename = file.name;
+      div.dataset.filesize = file.size;
+
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'preview-image';
+      div.appendChild(img);
+
+      // Кнопка удаления
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn-close position-absolute top-0 end-0';
+      delBtn.style.background = 'rgba(255,255,255,0.8)';
+      delBtn.style.borderRadius = '50%';
+      delBtn.onclick = () => {
+        // Удаляем файл из массива
+        accumulatedFiles = accumulatedFiles.filter(f => !(f.name === file.name && f.size === file.size));
+        // Удаляем превью
+        div.remove();
+        updateFileInput();
+      };
+      div.appendChild(delBtn);
+
+      previewContainer.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Обновляем fileList input'а для отправки формы
   function updateFileInput() {
     const dt = new DataTransfer();
     accumulatedFiles.forEach(f => dt.items.add(f));

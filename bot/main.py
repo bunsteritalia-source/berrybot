@@ -11,6 +11,7 @@ from db import init_db
 import aiosqlite
 
 from admin_site.app import app as admin_app
+from aiogram.types import FSInputFile
 
 MAIN_ADMIN_ID = int(os.getenv('MAIN_ADMIN_ID', '7942408433'))
 
@@ -30,8 +31,8 @@ async def backup_database():
         if not os.path.exists(db_path):
             await bot.send_message(MAIN_ADMIN_ID, f"❌ Файл базы не найден: {db_path}")
             return
-        with open(db_path, 'rb') as f:
-            await bot.send_document(MAIN_ADMIN_ID, f, caption="🔄 Автоматический бэкап базы данных")
+        document = FSInputFile(db_path)
+        await bot.send_document(MAIN_ADMIN_ID, document, caption="🔄 Автоматический бэкап базы данных")
     except Exception as e:
         await bot.send_message(MAIN_ADMIN_ID, f"❌ Ошибка бэкапа: {e}")
 
@@ -58,7 +59,7 @@ async def main():
 
     async def periodic_backup():
         while True:
-            await asyncio.sleep(3600)  # каждый час
+            await asyncio.sleep(3600)
             await backup_database()
 
     asyncio.create_task(periodic_backup())

@@ -76,6 +76,22 @@ async def init_db():
                 key TEXT PRIMARY KEY,
                 value TEXT
             );
+            CREATE TABLE IF NOT EXISTS presets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name_ru TEXT,
+                name_en TEXT,
+                name_ro TEXT
+            );
+            CREATE TABLE IF NOT EXISTS preset_variants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                preset_id INTEGER,
+                quantity INTEGER DEFAULT 0,
+                price INTEGER DEFAULT 0,
+                name_ru TEXT,
+                name_en TEXT,
+                name_ro TEXT,
+                FOREIGN KEY (preset_id) REFERENCES presets(id)
+            );
             INSERT OR IGNORE INTO settings (key, value) VALUES 
                 ('info_text_ru', ''),
                 ('info_text_en', ''),
@@ -86,7 +102,7 @@ async def init_db():
                 ('instagram_url', 'https://www.instagram.com/berry_bouquet.md/'),
                 ('tiktok_url', 'https://www.tiktok.com/@berry_bouquet_md.md');
         """)
-        # Удаляем старого админа и создаём нового с паролем admin123
+        # Пересоздаём админа, чтобы гарантированно работал вход
         await db.execute("DELETE FROM admins WHERE username = 'admin'")
         hashed = generate_password_hash('admin123')
         await db.execute("INSERT OR IGNORE INTO admins (username, password_hash) VALUES (?, ?)", ('admin', hashed))

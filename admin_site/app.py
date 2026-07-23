@@ -148,17 +148,11 @@ def variants(product_id):
 @app.route('/products/<int:product_id>/variants/add', methods=['POST'])
 @login_required
 def variant_add(product_id):
-    name_ru = request.form.get('name_ru', '')
-    name_en = request.form.get('name_en', '')
-    name_ro = request.form.get('name_ro', '')
-    price = request.form.get('price', 0)
     quantity = request.form.get('quantity', 0)
-    if not name_ru:
-        name_ru = f'{quantity} шт'
-    if not name_en:
-        name_en = f'{quantity} pcs'
-    if not name_ro:
-        name_ro = f'{quantity} buc'
+    price = request.form.get('price', 0)
+    name_ru = f'{quantity} шт'
+    name_en = f'{quantity} pcs'
+    name_ro = f'{quantity} buc'
     query_db("INSERT INTO product_variants (product_id, name_ru, name_en, name_ro, price, quantity) VALUES (?,?,?,?,?,?)",
              [product_id, name_ru, name_en, name_ro, price, quantity], commit=True)
     return redirect(url_for('variants', product_id=product_id))
@@ -267,18 +261,10 @@ def broadcast():
         return render_template('broadcast.html', success=True)
     return render_template('broadcast.html')
 
-# ========== ПРЕСЕТЫ ==========
+# Пресеты
 @app.route('/presets')
 @login_required
 def presets():
-    # Временный код: убедимся, что таблицы созданы (после восстановления старой базы)
-    from db import init_db
-    import asyncio
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(init_db())
-    loop.close()
-    # -------------------------------------------------
-
     all_presets = query_db("SELECT * FROM presets")
     return render_template('presets.html', presets=all_presets)
 
@@ -308,9 +294,9 @@ def preset_variants(preset_id):
 def preset_variant_add(preset_id):
     quantity = request.form.get('quantity', 0)
     price = request.form.get('price', 0)
-    name_ru = request.form.get('name_ru', f'{quantity} шт')
-    name_en = request.form.get('name_en', f'{quantity} pcs')
-    name_ro = request.form.get('name_ro', f'{quantity} buc')
+    name_ru = f'{quantity} шт'
+    name_en = f'{quantity} pcs'
+    name_ro = f'{quantity} buc'
     query_db("INSERT INTO preset_variants (preset_id, quantity, price, name_ru, name_en, name_ro) VALUES (?,?,?,?,?,?)",
              [preset_id, quantity, price, name_ru, name_en, name_ro], commit=True)
     return redirect(url_for('preset_variants', preset_id=preset_id))

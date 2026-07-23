@@ -12,10 +12,8 @@ UPLOAD_FOLDER = os.path.join('admin_site', 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Фильтр для работы с JSON в шаблонах
 app.add_template_filter(lambda s: json.loads(s) if s else [], 'from_json')
 
-# ─── АВТОРИЗАЦИЯ ──────────────────────────────────
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -38,7 +36,7 @@ def logout():
 def dashboard():
     return render_template('dashboard.html')
 
-# ─── ТОВАРЫ ───────────────────────────────────────
+# --- Товары ---
 @app.route('/products')
 @login_required
 def products():
@@ -78,7 +76,6 @@ def product_add():
                  [category_id, name_ru, name_en, name_ro, desc_ru, desc_en, desc_ro, base_price, has_variants, json.dumps(photos)], commit=True)
         product_id = query_db("SELECT last_insert_rowid()", one=True)[0]
 
-        # Если выбран пресет, копируем его варианты
         preset_id = request.form.get('preset_id')
         if has_variants and preset_id:
             preset_variants = query_db("SELECT * FROM preset_variants WHERE preset_id = ?", [preset_id])
@@ -118,7 +115,6 @@ def product_edit(product_id):
         query_db("UPDATE products SET category_id=?, name_ru=?, name_en=?, name_ro=?, description_ru=?, description_en=?, description_ro=?, base_price=?, has_variants=?, photos=? WHERE id=?",
                  [category_id, name_ru, name_en, name_ro, desc_ru, desc_en, desc_ro, base_price, has_variants, json.dumps(photos), product_id], commit=True)
 
-        # Замена вариантов из пресета
         replace_preset = request.form.get('replace_preset')
         preset_id = request.form.get('preset_id')
         if replace_preset and preset_id:
@@ -141,7 +137,7 @@ def product_delete(product_id):
     query_db("DELETE FROM products WHERE id = ?", [product_id], commit=True)
     return redirect(url_for('products'))
 
-# ─── ВАРИАНТЫ ТОВАРОВ ─────────────────────────────
+# Варианты товара
 @app.route('/products/<int:product_id>/variants')
 @login_required
 def variants(product_id):
@@ -176,7 +172,7 @@ def variant_delete(variant_id):
         return redirect(url_for('variants', product_id=variant['product_id']))
     return redirect(url_for('products'))
 
-# ─── КАТЕГОРИИ ────────────────────────────────────
+# Категории
 @app.route('/categories')
 @login_required
 def categories():
@@ -198,7 +194,7 @@ def category_delete(cat_id):
     query_db("DELETE FROM categories WHERE id = ?", [cat_id], commit=True)
     return redirect(url_for('categories'))
 
-# ─── АДМИНИСТРАТОРЫ ──────────────────────────────
+# Администраторы
 @app.route('/admins')
 @login_required
 def admins():
@@ -232,7 +228,7 @@ def admin_toggle_notify(admin_id):
         query_db("UPDATE admins SET notify_orders = ? WHERE id = ?", [new_val, admin_id], commit=True)
     return redirect(url_for('admins'))
 
-# ─── НАСТРОЙКИ ────────────────────────────────────
+# Настройки
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -252,7 +248,7 @@ def settings():
         config[key] = get_setting(key)
     return render_template('settings.html', config=config)
 
-# ─── РАССЫЛКА ─────────────────────────────────────
+# Рассылка
 @app.route('/broadcast', methods=['GET', 'POST'])
 @login_required
 def broadcast():
@@ -271,10 +267,18 @@ def broadcast():
         return render_template('broadcast.html', success=True)
     return render_template('broadcast.html')
 
-# ─── ПРЕСЕТЫ ВАРИАНТОВ ────────────────────────────
+# ========== ПРЕСЕТЫ ==========
 @app.route('/presets')
 @login_required
 def presets():
+    # Временный код: убедимся, что таблицы созданы (после восстановления старой базы)
+    from db import init_db
+    import asyncio
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(init_db())
+    loop.close()
+    # -------------------------------------------------
+
     all_presets = query_db("SELECT * FROM presets")
     return render_template('presets.html', presets=all_presets)
 
@@ -290,7 +294,7 @@ def preset_add():
              [name_ru, name_en, name_ro], commit=True)
     return redirect(url_for('presets'))
 
-@app.route('/presets/<int:preset_id>/variants', methods=['GET'])
+@app.route('/presets/<int:preset_id>/variants')
 @login_required
 def preset_variants(preset_id):
     preset = query_db("SELECT * FROM presets WHERE id = ?", [preset_id], one=True)
